@@ -1,34 +1,33 @@
 "use client";
 
+import { GlassButton, GlassPanel } from "@/components/ui";
+
 export function TopBar({ onNewResearch }: { onNewResearch: () => void }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700/20 glass">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-teal-500/20 to-teal-500/5 border border-teal-500/20 flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
+    <div className="sticky top-0 z-30 px-3 pt-3 sm:px-4">
+      <GlassPanel variant="muted" className="px-4 py-2.5 sm:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-teal-300/35 bg-gradient-to-br from-teal-400/25 to-cyan-400/10 text-teal-200">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <div className="truncate font-heading text-base font-semibold tracking-tight text-white">
+                Helix
+              </div>
+              <div className="truncate text-xs text-slate-400">AI Research Assistant</div>
+            </div>
           </div>
-          <div>
-            <span className="font-heading text-base font-semibold tracking-tight text-white">
-              Helix
-            </span>
-            <span className="text-xs text-slate-500 ml-2">AI Research Assistant</span>
-          </div>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onNewResearch}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium text-slate-300 glass hover:bg-slate-700/30 transition-all border border-slate-600/20 hover:border-slate-500/30"
-        >
-          New Research
-        </button>
-      </div>
+          <GlassButton onClick={onNewResearch} tone="ghost">
+            New Research
+          </GlassButton>
+        </div>
+      </GlassPanel>
     </div>
   );
 }

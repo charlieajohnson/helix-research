@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GlassPanel } from "@/components/ui";
+import {
+  GlassButton,
+  GlassChip,
+  GlassInput,
+  GlassPanel,
+  SectionLabel,
+} from "@/components/ui";
 
 const EXAMPLE_QUERIES = [
   "Latest advances in RLHF for fine-tuning LLMs",
@@ -41,8 +47,6 @@ export function QueryComposer() {
       }
 
       const { id } = await res.json();
-
-      // Navigate to the session page — this is now the source of truth
       router.push(`/research/${id}`);
     } catch (err: any) {
       setError(err.message);
@@ -58,120 +62,105 @@ export function QueryComposer() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-      {/* Logo */}
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500/20 to-teal-500/5 border border-teal-500/20 flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
+    <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center px-4 py-8 sm:px-6">
+      <div className="mb-8 text-center">
+        <div className="mb-3 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 py-2 backdrop-blur-xl">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-teal-300/35 bg-gradient-to-br from-teal-400/25 to-cyan-400/10 text-teal-200">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <h1 className="font-heading text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            Helix
+          </h1>
         </div>
-        <h1 className="font-heading text-2xl font-semibold tracking-tight text-white">
-          Helix
-        </h1>
+        <p className="text-sm text-slate-400">AI Research Assistant</p>
       </div>
-      <p className="text-sm text-slate-500 mb-8">AI Research Assistant</p>
 
-      {/* Input */}
-      <GlassPanel bright className="w-full max-w-2xl p-1.5">
-        <div className="flex items-end gap-2">
-          <textarea
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter a research question..."
-            className="flex-1 bg-transparent text-sm text-slate-200 placeholder:text-slate-600 resize-none outline-none px-3 py-2.5 min-h-[44px] max-h-[120px] font-body"
-            rows={1}
-            disabled={isSubmitting}
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={!query.trim() || isSubmitting}
-            className="flex-shrink-0 w-9 h-9 rounded-lg bg-teal-500/90 text-cosmos-950 flex items-center justify-center transition-all hover:bg-teal-400 disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            )}
-          </button>
+      <GlassPanel variant="elevated" className="w-full max-w-3xl p-4 sm:p-5">
+        <SectionLabel>Research Prompt</SectionLabel>
+
+        <div className="mt-3 flex flex-col gap-3">
+          <div className="glass-panel glass-panel-muted rounded-[calc(var(--panel-radius)-4px)] p-2">
+            <div className="flex items-end gap-2">
+              <GlassInput
+                as="textarea"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Enter a research question..."
+                rows={2}
+                disabled={isSubmitting}
+                containerClassName="p-0 bg-transparent border-0 shadow-none"
+                className="min-h-[52px] max-h-[140px] px-2.5 py-2"
+              />
+              <GlassButton
+                onClick={handleSubmit}
+                disabled={!query.trim() || isSubmitting}
+                tone="primary"
+                className="h-10 w-10 rounded-xl p-0"
+                aria-label="Start research"
+              >
+                {isSubmitting ? (
+                  <svg className="animate-spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                ) : (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                )}
+              </GlassButton>
+            </div>
+          </div>
+
+          {error && <p className="text-xs text-red-300">{error}</p>}
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            {(["quick", "standard", "deep"] as const).map((d) => (
+              <GlassChip
+                key={d}
+                onClick={() => setDepth(d)}
+                active={depth === d}
+                tone="accent"
+              >
+                {d}
+              </GlassChip>
+            ))}
+            <div className="mx-1 hidden h-4 w-px bg-white/20 sm:block" />
+            <GlassChip
+              onClick={() => setIncludeWeb((value) => !value)}
+              active={includeWeb}
+              tone="sky"
+              aria-pressed={includeWeb}
+            >
+              {includeWeb ? "ON" : "OFF"} Web
+            </GlassChip>
+            <GlassChip
+              onClick={() => setIncludeArxiv((value) => !value)}
+              active={includeArxiv}
+              tone="violet"
+              aria-pressed={includeArxiv}
+            >
+              {includeArxiv ? "ON" : "OFF"} arXiv
+            </GlassChip>
+          </div>
         </div>
       </GlassPanel>
 
-      {/* Error */}
-      {error && (
-        <p className="text-xs text-red-400 mt-2">{error}</p>
-      )}
-
-      {/* Options */}
-      <div className="flex items-center gap-4 mt-3">
-        <div className="flex items-center gap-2">
-          {(["quick", "standard", "deep"] as const).map((d) => (
-            <button
-              key={d}
-              onClick={() => setDepth(d)}
-              className={`px-2.5 py-1 rounded-pill text-[11px] font-mono font-medium transition-all ${
-                depth === d
-                  ? "bg-teal-500/15 text-teal-400 border border-teal-500/25"
-                  : "text-slate-500 hover:text-slate-400 border border-transparent"
-              }`}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-        <div className="w-px h-4 bg-slate-700/50" />
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={includeWeb}
-            onChange={(e) => setIncludeWeb(e.target.checked)}
-            className="sr-only"
-          />
-          <div className={`w-3 h-3 rounded-sm border transition-all ${includeWeb ? "bg-sky-500/30 border-sky-500/40" : "border-slate-600"}`}>
-            {includeWeb && (
-              <svg viewBox="0 0 12 12" className="text-sky-400" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="2 6 5 9 10 3" />
-              </svg>
-            )}
-          </div>
-          <span className="text-[11px] font-mono text-slate-500">Web</span>
-        </label>
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={includeArxiv}
-            onChange={(e) => setIncludeArxiv(e.target.checked)}
-            className="sr-only"
-          />
-          <div className={`w-3 h-3 rounded-sm border transition-all ${includeArxiv ? "bg-violet-500/30 border-violet-500/40" : "border-slate-600"}`}>
-            {includeArxiv && (
-              <svg viewBox="0 0 12 12" className="text-violet-400" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="2 6 5 9 10 3" />
-              </svg>
-            )}
-          </div>
-          <span className="text-[11px] font-mono text-slate-500">arXiv</span>
-        </label>
-      </div>
-
-      {/* Example queries */}
-      <div className="flex flex-wrap gap-2 mt-8 max-w-2xl justify-center">
-        {EXAMPLE_QUERIES.map((eq) => (
-          <button
-            key={eq}
-            onClick={() => setQuery(eq)}
-            className="text-xs text-slate-500 hover:text-teal-400 bg-slate-800/30 hover:bg-teal-500/5 border border-slate-700/30 hover:border-teal-500/20 px-3 py-1.5 rounded-pill transition-all"
+      <div className="mt-6 flex max-w-3xl flex-wrap justify-center gap-2.5">
+        {EXAMPLE_QUERIES.map((exampleQuery) => (
+          <GlassChip
+            key={exampleQuery}
+            onClick={() => setQuery(exampleQuery)}
+            tone="default"
+            className="normal-case tracking-normal"
           >
-            {eq}
-          </button>
+            {exampleQuery}
+          </GlassChip>
         ))}
       </div>
     </div>
