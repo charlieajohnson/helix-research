@@ -8,10 +8,12 @@ export function GlassPanel({
   children,
   className = "",
   bright = false,
+  style,
 }: {
   children: ReactNode;
   className?: string;
   bright?: boolean;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
@@ -20,6 +22,7 @@ export function GlassPanel({
         rounded-panel
         ${className}
       `}
+      style={style}
     >
       {children}
     </div>
