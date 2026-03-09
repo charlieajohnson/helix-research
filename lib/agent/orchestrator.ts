@@ -4,6 +4,7 @@ import {
   setSessionStatus,
   savePlan,
   saveSources,
+  getSources,
   saveOutput,
   saveEvaluation,
 } from "@/lib/db/queries";
@@ -40,10 +41,12 @@ export async function runResearchSession(
     // 4. Rank
     await setSessionStatus(sessionId, "ranking");
     const ranked = dedupeAndRank([...webResults, ...paperResults]);
-    const savedSources = await saveSources(sessionId, ranked);
+    await saveSources(sessionId, ranked);
 
-    // Map DB rows back to ResearchSource type (with real DB UUIDs)
-    const dbSources = savedSources.map((s) => ({
+    // Re-fetch from DB to get real UUIDs, then assign citation labels by score order
+    const rawDbSources = await getSources(sessionId);
+    rawDbSources.sort((a, b) => b.score - a.score);
+    const dbSources = rawDbSources.map((s, i) => ({
       id: s.id,
       sessionId: s.sessionId,
       type: s.type as "web" | "paper",
@@ -54,7 +57,7 @@ export async function runResearchSession(
       publishedAt: s.publishedAt ?? undefined,
       domain: s.domain ?? undefined,
       score: s.score,
-      citationLabel: s.citationLabel ?? undefined,
+      citationLabel: `[S${i + 1}]`,
     }));
 
     // 5. Synthesize (using DB sources with real IDs)
