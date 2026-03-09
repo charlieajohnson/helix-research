@@ -63,14 +63,14 @@ export function GlassButton({
     <button
       {...props}
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-1.5",
-        "font-mono text-[11px] font-medium uppercase tracking-[0.08em]",
-        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/60",
+        "inline-flex items-center justify-center gap-1.5 rounded-full border px-4 py-2",
+        "font-mono text-[11px] font-medium uppercase tracking-[0.1em]",
+        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50",
         "disabled:pointer-events-none disabled:opacity-40",
         tone === "primary" &&
-          "bg-[color:var(--accent)] text-slate-950 shadow-[0_12px_28px_rgba(82,216,198,0.35)] hover:brightness-110 active:brightness-95",
+          "border-white/10 bg-[color:var(--accent)] text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_24px_rgba(103,213,198,0.22)] hover:-translate-y-px hover:brightness-105 active:translate-y-0 active:brightness-95",
         tone === "ghost" &&
-          "glass-panel glass-panel-interactive border border-white/15 text-slate-200 hover:text-white active:scale-[0.99]",
+          "border-white/10 bg-white/[0.045] text-[color:var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-[var(--panel-blur-soft)] hover:border-white/16 hover:bg-white/[0.06] hover:text-[color:var(--text-primary)] active:scale-[0.99]",
         className
       )}
     >
@@ -84,6 +84,7 @@ export function GlassButton({
 type GlassInputBase = {
   containerClassName?: string;
   className?: string;
+  panelVariant?: GlassPanelVariant | "bare";
 };
 
 type GlassInputAsInput = GlassInputBase &
@@ -97,45 +98,83 @@ type GlassInputAsTextarea = GlassInputBase &
   };
 
 export function GlassInput(props: GlassInputAsInput | GlassInputAsTextarea) {
-  const sharedClassName = (
-    className?: string
-  ) =>
+  const sharedClassName = (className?: string) =>
     cn(
-      "w-full bg-transparent text-sm text-[color:var(--text-primary)]",
-      "placeholder:text-slate-500/90 outline-none",
-      "px-3.5 py-2.5 font-body",
+      "w-full bg-transparent text-[15px] leading-6 text-[color:var(--text-primary)]",
+      "placeholder:text-[color:var(--text-tertiary)] outline-none",
+      "px-3.5 py-3 font-body",
       className
     );
 
-  if (props.as === "textarea") {
-    const { as: _as, containerClassName, className, ...textareaProps } = props;
-    return (
-      <GlassPanel variant="elevated" className={cn("p-1.5", containerClassName)}>
-        <textarea
-          {...textareaProps}
-          className={cn(sharedClassName(className), "resize-none")}
-        />
+  const renderContainer = (
+    children: ReactNode,
+    panelVariant: GlassPanelVariant | "bare",
+    containerClassName?: string
+  ) =>
+    panelVariant === "bare" ? (
+      <div className={containerClassName}>{children}</div>
+    ) : (
+      <GlassPanel variant={panelVariant} className={cn("p-1.5", containerClassName)}>
+        {children}
       </GlassPanel>
+    );
+
+  if (props.as === "textarea") {
+    const {
+      as: _as,
+      containerClassName,
+      className,
+      panelVariant = "elevated",
+      ...textareaProps
+    } = props;
+    return renderContainer(
+      <textarea
+        {...textareaProps}
+        className={cn(sharedClassName(className), "resize-none")}
+      />,
+      panelVariant,
+      containerClassName
     );
   }
 
-  const { as: _as, containerClassName, className, ...inputProps } = props;
+  const {
+    as: _as,
+    containerClassName,
+    className,
+    panelVariant = "elevated",
+    ...inputProps
+  } = props;
 
-  return (
-    <GlassPanel variant="elevated" className={cn("p-1.5", containerClassName)}>
-      <input {...inputProps} className={sharedClassName(className)} />
-    </GlassPanel>
+  return renderContainer(
+    <input {...inputProps} className={sharedClassName(className)} />,
+    panelVariant,
+    containerClassName
   );
 }
 
 // ── Glass Chip ─────────────────────────────────────────────────────────────────
 
 const chipToneClasses = {
-  default: "text-slate-300 border-white/10",
-  accent: "text-teal-200 border-teal-300/25",
-  sky: "text-sky-300 border-sky-300/25",
-  violet: "text-violet-300 border-violet-300/25",
-  amber: "text-amber-300 border-amber-300/25",
+  default: {
+    active: "border-white/14 bg-white/[0.09] text-slate-100",
+    idle: "border-white/8 text-[color:var(--text-secondary)] hover:border-white/12 hover:bg-white/[0.05] hover:text-slate-100",
+  },
+  accent: {
+    active: "border-teal-300/24 bg-teal-300/12 text-teal-100",
+    idle: "border-white/8 text-[color:var(--text-secondary)] hover:border-teal-300/18 hover:bg-teal-300/[0.06] hover:text-teal-100",
+  },
+  sky: {
+    active: "border-sky-300/24 bg-sky-300/12 text-sky-100",
+    idle: "border-white/8 text-[color:var(--text-secondary)] hover:border-sky-300/18 hover:bg-sky-300/[0.06] hover:text-sky-100",
+  },
+  violet: {
+    active: "border-violet-300/24 bg-violet-300/12 text-violet-100",
+    idle: "border-white/8 text-[color:var(--text-secondary)] hover:border-violet-300/18 hover:bg-violet-300/[0.06] hover:text-violet-100",
+  },
+  amber: {
+    active: "border-amber-300/24 bg-amber-300/12 text-amber-100",
+    idle: "border-white/8 text-[color:var(--text-secondary)] hover:border-amber-300/18 hover:bg-amber-300/[0.06] hover:text-amber-100",
+  },
 } as const;
 
 export function GlassChip({
@@ -152,15 +191,12 @@ export function GlassChip({
     <button
       {...props}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1",
-        "font-mono text-[10px] font-medium uppercase tracking-[0.1em] transition-all duration-200",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/60",
+        "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border px-3.5 py-2",
+        "font-mono text-[10px] font-medium uppercase tracking-[0.12em] transition-all duration-200",
+        "bg-white/[0.025] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-[var(--panel-blur-soft)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50",
         "disabled:pointer-events-none disabled:opacity-40",
-        "glass-panel glass-panel-muted",
-        chipToneClasses[tone],
-        active
-          ? "bg-white/10 shadow-[0_0_0_1px_rgba(145,208,223,0.2)_inset,0_8px_18px_rgba(0,0,0,0.2)]"
-          : "text-[color:var(--text-secondary)] hover:text-slate-200 hover:bg-white/5",
+        active ? chipToneClasses[tone].active : chipToneClasses[tone].idle,
         className
       )}
     >
@@ -217,20 +253,20 @@ export function Badge({
   variant?: "default" | "web" | "paper" | "active" | "complete" | "error";
 }) {
   const classes = {
-    default: "text-slate-300 border-white/15",
-    web: "text-sky-300 border-sky-400/30",
-    paper: "text-violet-300 border-violet-400/30",
-    active: "text-teal-300 border-teal-400/30",
-    complete: "text-emerald-300 border-emerald-400/30",
-    error: "text-red-300 border-red-400/30",
+    default: "text-[color:var(--text-secondary)] border-white/10",
+    web: "bg-sky-300/[0.08] text-sky-200 border-sky-400/24",
+    paper: "bg-violet-300/[0.08] text-violet-200 border-violet-400/24",
+    active: "bg-teal-300/[0.08] text-teal-100 border-teal-400/24",
+    complete: "bg-emerald-300/[0.08] text-emerald-100 border-emerald-400/24",
+    error: "bg-red-300/[0.08] text-red-100 border-red-400/24",
   };
 
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2 py-0.5",
-        "font-mono text-[10px] font-medium uppercase tracking-[0.1em]",
-        "glass-panel glass-panel-muted",
+        "inline-flex h-6 items-center rounded-full border px-2.5",
+        "font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
+        "bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-[var(--panel-blur-soft)]",
         classes[variant]
       )}
     >
@@ -243,7 +279,7 @@ export function Badge({
 
 export function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">
+    <div className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[color:var(--text-tertiary)]">
       {children}
     </div>
   );
