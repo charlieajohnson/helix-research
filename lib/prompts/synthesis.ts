@@ -6,10 +6,7 @@ You MUST respond with valid JSON matching this exact schema:
   "keyFindings": ["3-6 key findings, each citing at least one source with [SN] labels"],
   "openQuestions": ["2-4 questions that remain unanswered by the current sources"],
   "limitations": ["2-3 limitations of this research (e.g., source bias, missing perspectives, recency issues)"],
-  "citations": [
-    {"label": "[S1]", "sourceId": "the-source-id-here"},
-    {"label": "[S2]", "sourceId": "the-source-id-here"}
-  ]
+  "citationLabels": ["[S1]", "[S2]", "[S3]"]
 }
 
 Rules:
@@ -18,7 +15,7 @@ Rules:
 - The summary should be substantive and well-structured, not a list of bullet points
 - Be honest about limitations and gaps in the evidence
 - Use clear, professional language suitable for a research brief
-- Include all provided sources in the citations array
+- In "citationLabels", list every [SN] label you actually used in the summary and findings
 
 Respond ONLY with the JSON object, no other text.`;
 

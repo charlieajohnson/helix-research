@@ -40,16 +40,31 @@ export async function runResearchSession(
     // 4. Rank
     await setSessionStatus(sessionId, "ranking");
     const ranked = dedupeAndRank([...webResults, ...paperResults]);
-    await saveSources(sessionId, ranked);
+    const savedSources = await saveSources(sessionId, ranked);
 
-    // 5. Synthesize
+    // Map DB rows back to ResearchSource type (with real DB UUIDs)
+    const dbSources = savedSources.map((s) => ({
+      id: s.id,
+      sessionId: s.sessionId,
+      type: s.type as "web" | "paper",
+      title: s.title,
+      url: s.url,
+      snippet: s.snippet,
+      authors: (s.authors as string[]) ?? [],
+      publishedAt: s.publishedAt ?? undefined,
+      domain: s.domain ?? undefined,
+      score: s.score,
+      citationLabel: s.citationLabel ?? undefined,
+    }));
+
+    // 5. Synthesize (using DB sources with real IDs)
     await setSessionStatus(sessionId, "synthesizing");
-    const output = await synthesizeStep(query, ranked);
+    const output = await synthesizeStep(query, dbSources);
     await saveOutput(sessionId, output);
 
-    // 6. Evaluate
+    // 6. Evaluate (using DB sources with real IDs)
     await setSessionStatus(sessionId, "evaluating");
-    const evaluation = computeEvaluation(ranked, output, startTime);
+    const evaluation = computeEvaluation(dbSources, output, startTime);
     await saveEvaluation(sessionId, evaluation);
 
     // 7. Complete

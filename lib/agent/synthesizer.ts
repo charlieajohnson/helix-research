@@ -25,6 +25,14 @@ export async function synthesizeStep(
     };
   }
 
+  // Build a label → sourceId map so we can construct citations ourselves
+  const labelToId = new Map<string, string>();
+  for (const s of sources) {
+    if (s.citationLabel) {
+      labelToId.set(s.citationLabel, s.id);
+    }
+  }
+
   const sourceContext = sources.map((s) => ({
     id: s.id,
     citationLabel: s.citationLabel ?? "[S?]",
@@ -58,20 +66,33 @@ export async function synthesizeStep(
 
       const parsed = JSON.parse(raw);
 
-      // Validate citation sourceIds against actual sources
-      const validSourceIds = new Set(sources.map((s) => s.id));
-      if (parsed.citations) {
-        parsed.citations = parsed.citations.filter(
-          (c: any) => validSourceIds.has(c.sourceId)
-        );
-      }
+      // Build citations from the labels the LLM actually used
+      const usedLabels: string[] = parsed.citationLabels ?? [];
+      // Also scan the text for any [SN] labels the LLM used but didn't list
+      const allText = [parsed.summary, ...(parsed.keyFindings ?? [])].join(" ");
+      const foundLabels = allText.match(/\[S\d+\]/g) ?? [];
+      const allLabels = [...new Set([...usedLabels, ...foundLabels])];
 
-      const output = ResearchOutputSchema.parse(parsed);
+      const citations = allLabels
+        .map((label: string) => {
+          const sourceId = labelToId.get(label);
+          return sourceId ? { label, sourceId } : null;
+        })
+        .filter(Boolean) as { label: string; sourceId: string }[];
+
+      const output: ResearchOutput = {
+        summary: parsed.summary ?? "",
+        keyFindings: parsed.keyFindings ?? [],
+        openQuestions: parsed.openQuestions ?? [],
+        limitations: parsed.limitations ?? [],
+        citations,
+      };
+
+      ResearchOutputSchema.parse(output);
       return output;
     } catch (err) {
       if (attempts >= maxAttempts) {
         console.error("Synthesizer failed after retries:", err);
-        // Return a fallback synthesis
         return {
           summary: `Research was conducted on "${query}" with ${sources.length} sources found. However, the synthesis step encountered an error. Please review the individual sources below.`,
           keyFindings: sources.slice(0, 3).map(
