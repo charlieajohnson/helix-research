@@ -1,26 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { CreateResearchRequestSchema, SessionConfigSchema } from "@/lib/types";
-import { runResearchSession } from "@/lib/agent/orchestrator";
-import { getSession } from "@/lib/db/queries";
+import {
+  createResearchSession,
+  executeResearchPipeline,
+} from "@/lib/agent/orchestrator";
+import { getRecentSessions } from "@/lib/db/queries";
+
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const parsed = CreateResearchRequestSchema.parse(body);
-
     const config = SessionConfigSchema.parse(parsed.config ?? {});
 
-    // Fire and forget — the pipeline runs in the background
-    // We return the session ID immediately so the frontend can poll
-    const sessionId = await runResearchSession(parsed.query, config);
+    // Phase 1: Create session in DB (fast — just an INSERT)
+    const sessionId = await createResearchSession(parsed.query, config);
 
-    const session = await getSession(sessionId);
+    // Phase 2: Run pipeline in the background after response is sent
+    after(async () => {
+      try {
+        await executeResearchPipeline(sessionId, parsed.query, config);
+      } catch (err) {
+        console.error(`Background pipeline failed for ${sessionId}:`, err);
+      }
+    });
 
+    // Return immediately — frontend navigates to /research/[id] and polls
     return NextResponse.json(
-      {
-        id: sessionId,
-        status: session?.status ?? "planning",
-      },
+      { id: sessionId, status: "intake" },
       { status: 201 }
     );
   } catch (err: any) {
@@ -33,6 +42,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/research — list recent sessions for the sidebar
+ */
+export async function GET() {
+  try {
+    const sessions = await getRecentSessions(20);
+    return NextResponse.json({ sessions });
+  } catch (err) {
+    console.error("GET /api/research error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

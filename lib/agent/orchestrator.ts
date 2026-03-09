@@ -4,6 +4,7 @@ import {
   setSessionStatus,
   savePlan,
   saveSources,
+  getSources,
   saveOutput,
   saveEvaluation,
 } from "@/lib/db/queries";
@@ -14,36 +15,51 @@ import { searchWeb } from "@/lib/tools/web-search";
 import { searchArxiv } from "@/lib/tools/arxiv";
 import { dedupeAndRank } from "@/lib/tools/scoring";
 
-export async function runResearchSession(
+/**
+ * Phase 1: Create the session row in the DB and return immediately.
+ * This is the synchronous part that the POST handler awaits.
+ */
+export async function createResearchSession(
   query: string,
   config: SessionConfig
 ): Promise<string> {
+  const session = await createSession(query, config);
+  return session.id;
+}
+
+/**
+ * Phase 2: Execute the full pipeline. Runs in the background via waitUntil.
+ * Each step updates session status in the DB so the frontend can poll progress.
+ */
+export async function executeResearchPipeline(
+  sessionId: string,
+  query: string,
+  config: SessionConfig
+): Promise<void> {
   const startTime = Date.now();
 
-  // 1. Create session
-  const session = await createSession(query, config);
-  const sessionId = session.id;
-
   try {
-    // 2. Plan
+    // 1. Plan
     await setSessionStatus(sessionId, "planning");
     const plan = await planStep(query, config);
     await savePlan(sessionId, plan);
 
-    // 3. Search (parallel)
+    // 2. Search (parallel)
     await setSessionStatus(sessionId, "searching");
     const [webResults, paperResults] = await Promise.all([
       config.includeWeb ? searchWeb(plan.searchQueries.web) : Promise.resolve([]),
       config.includeArxiv ? searchArxiv(plan.searchQueries.papers) : Promise.resolve([]),
     ]);
 
-    // 4. Rank
+    // 3. Rank
     await setSessionStatus(sessionId, "ranking");
     const ranked = dedupeAndRank([...webResults, ...paperResults]);
-    const savedSources = await saveSources(sessionId, ranked);
+    await saveSources(sessionId, ranked);
 
-    // Map DB rows back to ResearchSource type (with real DB UUIDs)
-    const dbSources = savedSources.map((s) => ({
+    // Re-fetch from DB to get real UUIDs, assign citation labels by score order
+    const rawDbSources = await getSources(sessionId);
+    rawDbSources.sort((a, b) => b.score - a.score);
+    const dbSources = rawDbSources.map((s, i) => ({
       id: s.id,
       sessionId: s.sessionId,
       type: s.type as "web" | "paper",
@@ -54,25 +70,23 @@ export async function runResearchSession(
       publishedAt: s.publishedAt ?? undefined,
       domain: s.domain ?? undefined,
       score: s.score,
-      citationLabel: s.citationLabel ?? undefined,
+      citationLabel: `[S${i + 1}]`,
     }));
 
-    // 5. Synthesize (using DB sources with real IDs)
+    // 4. Synthesize
     await setSessionStatus(sessionId, "synthesizing");
     const output = await synthesizeStep(query, dbSources);
     await saveOutput(sessionId, output);
 
-    // 6. Evaluate (using DB sources with real IDs)
+    // 5. Evaluate
     await setSessionStatus(sessionId, "evaluating");
     const evaluation = computeEvaluation(dbSources, output, startTime);
     await saveEvaluation(sessionId, evaluation);
 
-    // 7. Complete
+    // 6. Complete
     await setSessionStatus(sessionId, "complete");
   } catch (err) {
     console.error(`Session ${sessionId} failed:`, err);
     await setSessionStatus(sessionId, "failed");
   }
-
-  return sessionId;
 }

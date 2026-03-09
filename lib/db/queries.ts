@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db } from "./client";
 import {
   researchSessions,
@@ -40,6 +40,20 @@ export async function getSession(id: string) {
     .from(researchSessions)
     .where(eq(researchSessions.id, id));
   return session ?? null;
+}
+
+export async function getRecentSessions(limit: number = 20) {
+  const rows = await db()
+    .select()
+    .from(researchSessions)
+    .orderBy(desc(researchSessions.createdAt))
+    .limit(limit);
+  return rows.map((r) => ({
+    id: r.id,
+    query: r.query,
+    status: r.status,
+    createdAt: r.createdAt.toISOString(),
+  }));
 }
 
 // ── Plans ──────────────────────────────────────────────────────────────────────

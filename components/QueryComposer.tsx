@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { GlassPanel } from "@/components/ui";
-import { useResearchStore } from "@/lib/store";
 
 const EXAMPLE_QUERIES = [
   "Latest advances in RLHF for fine-tuning LLMs",
@@ -12,15 +12,42 @@ const EXAMPLE_QUERIES = [
 ];
 
 export function QueryComposer() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [depth, setDepth] = useState<"quick" | "standard" | "deep">("standard");
   const [includeWeb, setIncludeWeb] = useState(true);
   const [includeArxiv, setIncludeArxiv] = useState(true);
-  const { startResearch, isLoading } = useResearchStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = () => {
-    if (!query.trim() || isLoading) return;
-    startResearch(query.trim(), { depth, includeWeb, includeArxiv });
+  const handleSubmit = async () => {
+    if (!query.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: query.trim(),
+          config: { depth, includeWeb, includeArxiv },
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `Request failed: ${res.status}`);
+      }
+
+      const { id } = await res.json();
+
+      // Navigate to the session page — this is now the source of truth
+      router.push(`/research/${id}`);
+    } catch (err: any) {
+      setError(err.message);
+      setIsSubmitting(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -57,14 +84,14 @@ export function QueryComposer() {
             placeholder="Enter a research question..."
             className="flex-1 bg-transparent text-sm text-slate-200 placeholder:text-slate-600 resize-none outline-none px-3 py-2.5 min-h-[44px] max-h-[120px] font-body"
             rows={1}
-            disabled={isLoading}
+            disabled={isSubmitting}
           />
           <button
             onClick={handleSubmit}
-            disabled={!query.trim() || isLoading}
+            disabled={!query.trim() || isSubmitting}
             className="flex-shrink-0 w-9 h-9 rounded-lg bg-teal-500/90 text-cosmos-950 flex items-center justify-center transition-all hover:bg-teal-400 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M21 12a9 9 0 1 1-6.219-8.56" />
               </svg>
@@ -77,6 +104,11 @@ export function QueryComposer() {
           </button>
         </div>
       </GlassPanel>
+
+      {/* Error */}
+      {error && (
+        <p className="text-xs text-red-400 mt-2">{error}</p>
+      )}
 
       {/* Options */}
       <div className="flex items-center gap-4 mt-3">

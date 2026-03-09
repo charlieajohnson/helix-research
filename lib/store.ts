@@ -1,86 +1,97 @@
 import { create } from "zustand";
-import type { SessionResponse, SessionConfig } from "@/lib/types";
+import type { SessionResponse } from "@/lib/types";
+
+interface RecentSession {
+  id: string;
+  query: string;
+  status: string;
+  createdAt: string;
+}
 
 interface ResearchStore {
-  // Current session
+  // Current session data (hydrated from DB via polling)
   currentSession: SessionResponse | null;
-  isLoading: boolean;
+  isPolling: boolean;
   error: string | null;
 
+  // Recent sessions for sidebar
+  recentSessions: RecentSession[];
+
   // Actions
-  startResearch: (query: string, config?: Partial<SessionConfig>) => Promise<void>;
   pollSession: (id: string) => Promise<void>;
+  startPolling: (id: string) => void;
+  stopPolling: () => void;
+  setSession: (session: SessionResponse) => void;
   clearSession: () => void;
+  fetchRecentSessions: () => Promise<void>;
 }
+
+let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 export const useResearchStore = create<ResearchStore>((set, get) => ({
   currentSession: null,
-  isLoading: false,
+  isPolling: false,
   error: null,
+  recentSessions: [],
 
-  startResearch: async (query, config) => {
-    set({ isLoading: true, error: null, currentSession: null });
-
-    try {
-      const res = await fetch("/api/research", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query,
-          config: {
-            depth: "standard",
-            includeWeb: true,
-            includeArxiv: true,
-            ...config,
-          },
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `Request failed: ${res.status}`);
-      }
-
-      const { id } = await res.json();
-
-      // Start polling
-      const poll = async () => {
-        const store = get();
-        try {
-          await store.pollSession(id);
-          const session = get().currentSession;
-          if (
-            session &&
-            session.session.status !== "complete" &&
-            session.session.status !== "failed"
-          ) {
-            setTimeout(poll, 2000);
-          } else {
-            set({ isLoading: false });
-          }
-        } catch {
-          set({ isLoading: false });
-        }
-      };
-
-      poll();
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
-    }
-  },
-
-  pollSession: async (id) => {
+  pollSession: async (id: string) => {
     try {
       const res = await fetch(`/api/research/${id}`);
       if (!res.ok) throw new Error("Failed to fetch session");
       const data: SessionResponse = await res.json();
-      set({ currentSession: data });
+      set({ currentSession: data, error: null });
+
+      // Auto-stop polling when terminal state reached
+      if (data.session.status === "complete" || data.session.status === "failed") {
+        get().stopPolling();
+        // Refresh recent sessions to show updated status
+        get().fetchRecentSessions();
+      }
     } catch (err: any) {
       set({ error: err.message });
     }
   },
 
+  startPolling: (id: string) => {
+    // Clear any existing interval
+    if (pollInterval) clearInterval(pollInterval);
+
+    set({ isPolling: true, error: null });
+
+    // Immediate first poll
+    get().pollSession(id);
+
+    // Then poll every 1.5s for live stage updates
+    pollInterval = setInterval(() => {
+      get().pollSession(id);
+    }, 1500);
+  },
+
+  stopPolling: () => {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    set({ isPolling: false });
+  },
+
+  setSession: (session) => {
+    set({ currentSession: session });
+  },
+
   clearSession: () => {
-    set({ currentSession: null, isLoading: false, error: null });
+    get().stopPolling();
+    set({ currentSession: null, isPolling: false, error: null });
+  },
+
+  fetchRecentSessions: async () => {
+    try {
+      const res = await fetch("/api/research");
+      if (!res.ok) return;
+      const data = await res.json();
+      set({ recentSessions: data.sessions ?? [] });
+    } catch {
+      // Silent fail — sidebar is non-critical
+    }
   },
 }));
