@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { GlassPanel, Badge } from "@/components/ui";
 import type { ResearchSource } from "@/lib/types";
 
@@ -84,36 +85,47 @@ export function SourceCard({
 }
 
 export function SourceList({ sources }: { sources: ResearchSource[] }) {
+  const [expanded, setExpanded] = useState(false);
   if (sources.length === 0) return null;
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-3">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-500">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-        </svg>
-        <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
-          Sources Analyzed
-        </span>
-      </div>
-
-      <div className="flex items-center gap-4 mb-4">
-        <GlassPanel className="px-3 py-2 flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-400">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between py-3 group"
+      >
+        <div className="flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-500">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
           </svg>
-          <span className="text-lg font-heading font-semibold text-white">{sources.length}</span>
-          <span className="text-xs text-slate-400">Relevant Sources</span>
-        </GlassPanel>
-      </div>
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+            Sources Analyzed
+          </span>
+          <span className="text-xs text-slate-400 ml-1">
+            {sources.length} sources
+          </span>
+        </div>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={`text-slate-500 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
 
-      <div className="space-y-2">
-        {sources.map((source, i) => (
-          <SourceCard key={source.id} source={source} index={i} />
-        ))}
-      </div>
+      {expanded && (
+        <div className="space-y-2 pb-2">
+          {sources.map((source, i) => (
+            <SourceCard key={source.id} source={source} index={i} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

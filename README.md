@@ -1,5 +1,3 @@
-https://helix-research-flax.vercel.app
-
 # Helix — AI Research Assistant
 
 > AI-powered research agent with visible orchestration, source provenance, and structured synthesis.

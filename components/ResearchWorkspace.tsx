@@ -95,11 +95,11 @@ export function ResearchWorkspace() {
                 </GlassPanel>
               )}
 
-              {/* Sources */}
-              {sources.length > 0 && <SourceList sources={sources} />}
-
-              {/* Synthesis */}
+              {/* Synthesis — the main event, always on top */}
               {output && <SynthesisPanel output={output} />}
+
+              {/* Sources — supporting evidence below */}
+              {sources.length > 0 && <SourceList sources={sources} />}
 
               {/* Loading state */}
               {isLoading && status !== "complete" && status !== "failed" && (
