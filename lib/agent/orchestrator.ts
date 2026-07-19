@@ -53,7 +53,7 @@ export async function executeResearchPipeline(
 
     // 3. Rank
     await setSessionStatus(sessionId, "ranking");
-    const ranked = dedupeAndRank([...webResults, ...paperResults]);
+    const ranked = dedupeAndRank([...webResults, ...paperResults], query);
     await saveSources(sessionId, ranked);
 
     // Re-fetch from DB to get real UUIDs, assign citation labels by score order
@@ -80,7 +80,7 @@ export async function executeResearchPipeline(
 
     // 5. Evaluate
     await setSessionStatus(sessionId, "evaluating");
-    const evaluation = computeEvaluation(dbSources, output, startTime);
+    const evaluation = computeEvaluation(dbSources, output, startTime, config);
     await saveEvaluation(sessionId, evaluation);
 
     // 6. Complete

@@ -2,7 +2,12 @@ import OpenAI from "openai";
 import { ResearchPlanSchema, type ResearchPlan, type SessionConfig } from "@/lib/types";
 import { PLANNER_SYSTEM_PROMPT } from "@/lib/prompts/planner";
 
-const client = new OpenAI();
+let client: OpenAI | null = null;
+
+function getClient() {
+  client ??= new OpenAI();
+  return client;
+}
 
 export async function planStep(
   query: string,
@@ -10,14 +15,14 @@ export async function planStep(
 ): Promise<ResearchPlan> {
   const depthGuidance =
     config.depth === "quick"
-      ? "Keep the plan focused — 2-3 subquestions and 2 search queries per source type."
+      ? "Keep the plan focused. Use 2-3 subquestions and 2 search queries per source type."
       : config.depth === "deep"
-        ? "Be thorough — 4-5 subquestions and 3-4 search queries per source type."
-        : "Use moderate depth — 3-4 subquestions and 2-3 search queries per source type.";
+        ? "Be thorough. Use 4-5 subquestions and 3-4 search queries per source type."
+        : "Use moderate depth. Use 3-4 subquestions and 2-3 search queries per source type.";
 
   const sourceGuidance = [
-    config.includeWeb ? "Web search is enabled." : "Web search is DISABLED — do not generate web queries.",
-    config.includeArxiv ? "arXiv paper search is enabled." : "arXiv search is DISABLED — do not generate paper queries.",
+    config.includeWeb ? "Web search is enabled." : "Web search is disabled. Do not generate web queries.",
+    config.includeArxiv ? "arXiv paper search is enabled." : "arXiv search is disabled. Do not generate paper queries.",
   ].join(" ");
 
   const userMessage = `Research query: "${query}"
@@ -34,16 +39,19 @@ Generate a research plan.`;
   while (attempts < maxAttempts) {
     attempts++;
     try {
-      const completion = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        response_format: { type: "json_object" },
-        temperature: 0.3,
-        max_tokens: 1000,
-        messages: [
-          { role: "system", content: PLANNER_SYSTEM_PROMPT },
-          { role: "user", content: userMessage },
-        ],
-      });
+      const completion = await getClient().chat.completions.create(
+        {
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          temperature: 0.3,
+          max_tokens: 1000,
+          messages: [
+            { role: "system", content: PLANNER_SYSTEM_PROMPT },
+            { role: "user", content: userMessage },
+          ],
+        },
+        { signal: AbortSignal.timeout(45_000) }
+      );
 
       const raw = completion.choices[0]?.message?.content;
       if (!raw) throw new Error("Empty response from planner");

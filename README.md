@@ -1,141 +1,89 @@
-https://helix-research-flax.vercel.app
+# Helix research desk
 
-# Helix — AI Research Assistant
+[Live product](https://helix-research-flax.vercel.app)
 
-> AI-powered research agent with visible orchestration, source provenance, and structured synthesis.
+Helix turns a difficult question into an evidence-backed brief. It preserves the research plan, ranked source set, cited findings, limitations and open questions so an analyst can inspect the work behind the answer.
 
-Helix takes a research question, plans a search strategy, searches the web and arXiv, ranks and deduplicates sources, synthesizes a cited brief, and evaluates quality — all visible as a live pipeline in the UI.
+It is designed for technical strategy, investment research, product intelligence and R&D workflows where a defensible first brief matters more than a fast chat response.
 
-## Architecture
+## Research flow
 
+```text
+Question
+  -> plan the research
+  -> search web and arXiv sources
+  -> deduplicate and rank evidence
+  -> synthesise a cited brief
+  -> evaluate coverage and citation use
 ```
-User query
-  → PLAN        (decompose into subquestions + search queries)
-  → SEARCH      (web + arXiv in parallel)
-  → RANK        (dedupe, score, assign citation labels)
-  → SYNTHESIZE  (structured brief citing ranked sources)
-  → EVALUATE    (coverage, cost, latency, warnings)
-  → COMPLETE
-```
 
-### Stack
+The pipeline is deterministic and bounded. Planning and synthesis use two structured OpenAI calls. Search, ranking and evaluation remain explicit application steps.
 
-- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS, Zustand, Framer Motion
-- **Backend**: Next.js API routes, OpenAI API (GPT-4o-mini / GPT-5-mini)
-- **Search**: Tavily (web), arXiv API (papers)
-- **Database**: Neon Postgres + Drizzle ORM
-- **Deployment**: Vercel
+## Product surface
 
-### Key Design Decisions
+- Decision-led research composer with configurable depth and source sets
+- Visible plan and stage progression
+- Executive read with citations linked to source records
+- Evidence ledger with source metadata and excerpts
+- Open questions, limitations and run details
+- Non-cacheable session responses and no public session index
+- Best-effort request limits on new briefs
 
-- **Deterministic pipeline** — controlled state machine, not an autonomous loop
-- **Two LLM calls** — planner + synthesizer. Evaluation is deterministic
-- **No LangChain** — direct OpenAI SDK usage for transparency
-- **Zod-validated** — every step has typed input/output contracts
-- **Flat architecture** — single Next.js app, no monorepo overhead
+Helix prepares a research brief. Material claims should be verified against the linked primary sources.
 
-## Setup
+## Stack
 
-### Prerequisites
+- Next.js 15, React 19 and TypeScript
+- Tailwind CSS and Zustand
+- OpenAI for structured planning and synthesis
+- Tavily and arXiv for source retrieval
+- Neon Postgres with Drizzle ORM
+- Vercel deployment
 
-- Node.js 20+
-- A [Neon](https://neon.tech) Postgres database
-- An [OpenAI](https://platform.openai.com) API key
-- A [Tavily](https://tavily.com) API key (free tier)
+## Local setup
 
-### Install
+Requirements: Node.js 20 or later, a Neon database, an OpenAI API key and a Tavily API key.
 
 ```bash
-git clone <repo-url> && cd helix
 npm install
+cp .env.example .env.local
 ```
 
-### Configure
-
-```bash
-cp .env.example .env
-```
-
-Fill in your keys:
+Set:
 
 ```env
-OPENAI_API_KEY=sk-...
-TAVILY_API_KEY=tvly-...
-DATABASE_URL=postgresql://...
+OPENAI_API_KEY=
+TAVILY_API_KEY=
+DATABASE_URL=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Database
-
-Push the schema to your Neon database:
+Push the schema and start the app:
 
 ```bash
 npm run db:push
-```
-
-### Run
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Validation:
 
-## Deployment (Vercel)
-
-1. Push to GitHub
-2. Import in [Vercel](https://vercel.com)
-3. Add environment variables (same as `.env`)
-4. Deploy — Vercel handles the rest
-
-## Project Structure
-
-```
-helix/
-├── app/                         ← Next.js app router
-│   ├── page.tsx                 ← Landing / query composer
-│   ├── research/[id]/page.tsx   ← Active session view
-│   └── api/
-│       ├── research/route.ts    ← POST: create + run session
-│       ├── research/[id]/route.ts ← GET: fetch session state
-│       └── health/route.ts
-├── lib/
-│   ├── agent/                   ← Pipeline steps
-│   │   ├── orchestrator.ts      ← Runs the full pipeline
-│   │   ├── planner.ts           ← Decomposes query → plan
-│   │   ├── synthesizer.ts       ← Sources → cited brief
-│   │   └── evaluator.ts         ← Computes quality metrics
-│   ├── tools/                   ← Search adapters
-│   │   ├── web-search.ts        ← Tavily API
-│   │   ├── arxiv.ts             ← arXiv API (no key needed)
-│   │   └── scoring.ts           ← Dedupe + rank
-│   ├── db/                      ← Drizzle ORM
-│   │   ├── schema.ts
-│   │   ├── client.ts
-│   │   └── queries.ts
-│   ├── prompts/                 ← LLM prompts
-│   ├── types.ts                 ← Zod schemas + types
-│   └── store.ts                 ← Zustand state
-└── components/                  ← React UI
-    ├── QueryComposer.tsx
-    ├── PipelineTracker.tsx
-    ├── SourceCard.tsx
-    ├── SynthesisPanel.tsx
-    ├── ObservabilityPanel.tsx
-    └── ui/
+```bash
+npm run typecheck
+npm run build
 ```
 
-## What This Demonstrates
+## Main application boundaries
 
-- **Agent orchestration** — deterministic state machine, not a chat loop
-- **Tool use** — web search + arXiv adapters behind clean interfaces
-- **Structured outputs** — Zod-validated LLM responses, typed throughout
-- **Source provenance** — every claim traced to a ranked, scored source
-- **Observability** — cost, latency, coverage visible in the UI
-- **Evaluation** — quality metrics computed per session
-- **Product design** — glassmorphism UI with cosmic aesthetic
-- **Production deployment** — Vercel + Neon, working public URL
+```text
+app/
+  page.tsx                         landing and query composer
+  research/[id]/page.tsx           live research record
+  api/research/route.ts             create a bounded research run
+  api/research/[id]/route.ts        read one private, non-cacheable record
+components/                         product interface
+lib/agent/                          planning, synthesis and orchestration
+lib/tools/                          Tavily, arXiv and deterministic ranking
+lib/db/                             Drizzle schema and queries
+```
 
-## License
-
-MIT
+The source repository contains no credentials. Use Vercel project variables for production configuration.

@@ -1,97 +1,105 @@
 import { create } from "zustand";
 import type { SessionResponse } from "@/lib/types";
 
-interface RecentSession {
-  id: string;
-  query: string;
-  status: string;
-  createdAt: string;
-}
-
 interface ResearchStore {
-  // Current session data (hydrated from DB via polling)
   currentSession: SessionResponse | null;
   isPolling: boolean;
   error: string | null;
-
-  // Recent sessions for sidebar
-  recentSessions: RecentSession[];
-
-  // Actions
-  pollSession: (id: string) => Promise<void>;
   startPolling: (id: string) => void;
   stopPolling: () => void;
-  setSession: (session: SessionResponse) => void;
   clearSession: () => void;
-  fetchRecentSessions: () => Promise<void>;
 }
 
-let pollInterval: ReturnType<typeof setInterval> | null = null;
+let pollTimer: ReturnType<typeof setTimeout> | null = null;
+let pollController: AbortController | null = null;
+let pollGeneration = 0;
+
+function cancelActivePoll() {
+  pollGeneration += 1;
+  pollController?.abort();
+  pollController = null;
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = null;
+}
 
 export const useResearchStore = create<ResearchStore>((set, get) => ({
   currentSession: null,
   isPolling: false,
   error: null,
-  recentSessions: [],
-
-  pollSession: async (id: string) => {
-    try {
-      const res = await fetch(`/api/research/${id}`);
-      if (!res.ok) throw new Error("Failed to fetch session");
-      const data: SessionResponse = await res.json();
-      set({ currentSession: data, error: null });
-
-      // Auto-stop polling when terminal state reached
-      if (data.session.status === "complete" || data.session.status === "failed") {
-        get().stopPolling();
-        // Refresh recent sessions to show updated status
-        get().fetchRecentSessions();
-      }
-    } catch (err: any) {
-      set({ error: err.message });
-    }
-  },
 
   startPolling: (id: string) => {
-    // Clear any existing interval
-    if (pollInterval) clearInterval(pollInterval);
+    cancelActivePoll();
+    const generation = pollGeneration;
+    let consecutiveFailures = 0;
 
-    set({ isPolling: true, error: null });
+    set((state) => ({
+      currentSession: state.currentSession?.session.id === id ? state.currentSession : null,
+      isPolling: true,
+      error: null,
+    }));
 
-    // Immediate first poll
-    get().pollSession(id);
+    const poll = async () => {
+      if (generation !== pollGeneration) return;
+      pollController = new AbortController();
 
-    // Then poll every 1.5s for live stage updates
-    pollInterval = setInterval(() => {
-      get().pollSession(id);
-    }, 1500);
+      try {
+        const response = await fetch(`/api/research/${id}`, {
+          cache: "no-store",
+          signal: pollController.signal,
+        });
+
+        if (generation !== pollGeneration) return;
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          const message = body.error ?? "The research session could not be loaded.";
+
+          if (response.status === 400 || response.status === 404) {
+            set({ currentSession: null, isPolling: false, error: message });
+            return;
+          }
+          throw new Error(message);
+        }
+
+        const data: SessionResponse = await response.json();
+        if (generation !== pollGeneration || data.session.id !== id) return;
+
+        consecutiveFailures = 0;
+        set({ currentSession: data, error: null });
+
+        if (data.session.status === "complete" || data.session.status === "failed") {
+          pollController = null;
+          set({ isPolling: false });
+          return;
+        }
+
+        pollTimer = setTimeout(() => void poll(), 1500);
+      } catch (caught) {
+        if (generation !== pollGeneration || pollController?.signal.aborted) return;
+
+        consecutiveFailures += 1;
+        const message = caught instanceof Error ? caught.message : "The research session could not be loaded.";
+
+        if (consecutiveFailures >= 3) {
+          set({ isPolling: false, error: `${message} Refresh or start a new brief.` });
+          return;
+        }
+
+        set({ error: "Connection interrupted. Retrying…" });
+        pollTimer = setTimeout(() => void poll(), 1500 * consecutiveFailures);
+      }
+    };
+
+    void poll();
   },
 
   stopPolling: () => {
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
-    }
+    cancelActivePoll();
     set({ isPolling: false });
-  },
-
-  setSession: (session) => {
-    set({ currentSession: session });
   },
 
   clearSession: () => {
     get().stopPolling();
-    set({ currentSession: null, isPolling: false, error: null });
-  },
-
-  fetchRecentSessions: async () => {
-    try {
-      const res = await fetch("/api/research");
-      if (!res.ok) return;
-      const data = await res.json();
-      set({ recentSessions: data.sessions ?? [] });
-    } catch {
-      // Silent fail — sidebar is non-critical
-    }
+    set({ currentSession: null, error: null });
   },
 }));

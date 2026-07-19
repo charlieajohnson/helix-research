@@ -1,116 +1,64 @@
-"use client";
-
-import { useState } from "react";
-import { Badge, GlassPanel, SectionLabel } from "@/components/ui";
+import { Badge, SectionLabel } from "@/components/ui";
 import type { ResearchSource } from "@/lib/types";
 
-export function SourceCard({
-  source,
-  index,
-}: {
-  source: ResearchSource;
-  index: number;
-}) {
+export function SourceCard({ source, index }: { source: ResearchSource; index: number }) {
   return (
-    <a
-      href={source.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block"
-      style={{
-        animation: "fadeUp 0.4s ease-out both",
-        animationDelay: `${index * 0.06}s`,
-      }}
-    >
-      <GlassPanel variant="interactive" className="p-3.5">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex min-w-8 items-center justify-center rounded-md border border-teal-300/35 bg-teal-300/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-teal-100">
-            {source.citationLabel ?? `S${index + 1}`}
-          </span>
-
-          <div className="min-w-0 flex-1">
-            <div className="mb-1.5 flex items-start gap-2">
-              <h4 className="flex-1 truncate text-sm font-semibold text-slate-100">
-                {source.title}
-              </h4>
-              <Badge variant={source.type === "paper" ? "paper" : "web"}>
-                {source.type}
-              </Badge>
-            </div>
-
-            <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] text-slate-400">
-              {source.domain && <span>{source.domain}</span>}
-              {source.authors && source.authors.length > 0 && (
-                <span>
-                  {source.authors.slice(0, 2).join(", ")}
-                  {source.authors.length > 2 ? " et al." : ""}
-                </span>
-              )}
-              <span className="ml-auto text-teal-200">{(source.score * 100).toFixed(0)}%</span>
-            </div>
-
-            <p className="line-clamp-3 text-xs leading-6 text-slate-300/95">
-              {source.snippet}
-            </p>
-          </div>
-
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            className="mt-1 shrink-0 text-slate-500"
-          >
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-            <polyline points="15 3 21 3 21 9" />
-            <line x1="10" y1="14" x2="21" y2="3" />
-          </svg>
-        </div>
-      </GlassPanel>
-    </a>
+    <article id={`source-${source.id}`} className="scroll-mt-6 border-t border-[color:var(--rule)] py-5 first:border-t-0 first:pt-0">
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-[color:var(--signal)]">
+          {source.citationLabel ?? `[S${index + 1}]`}
+        </span>
+        <Badge variant={source.type === "paper" ? "paper" : "web"}>{source.type}</Badge>
+      </div>
+      <h3 className="mt-3 text-sm font-semibold leading-6 text-[color:var(--paper)]">{source.title}</h3>
+      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[8px] uppercase tracking-[0.08em] text-[color:var(--paper-faint)]">
+        {source.domain && <span>{source.domain}</span>}
+        {source.publishedAt && <span>{formatDate(source.publishedAt)}</span>}
+        {source.authors && source.authors.length > 0 && <span>{source.authors.slice(0, 2).join(", ")}</span>}
+      </div>
+      <p className="mt-3 line-clamp-4 text-xs leading-6 text-[color:var(--paper-muted)]">{cleanSnippet(source.snippet)}</p>
+      <a
+        href={source.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-4 inline-flex min-h-11 items-center border-b border-[color:var(--rule)] font-mono text-[9px] uppercase tracking-[0.12em] text-[color:var(--paper-muted)] transition-colors hover:border-[color:var(--signal)] hover:text-[color:var(--paper)]"
+        aria-label={`Open source: ${source.title}`}
+      >
+        Open source <span className="ml-2 text-[color:var(--signal)]" aria-hidden="true">↗</span>
+      </a>
+    </article>
   );
 }
 
 export function SourceList({ sources }: { sources: ResearchSource[] }) {
-  const [expanded, setExpanded] = useState(false);
-
-  if (sources.length === 0) return null;
-
   return (
-    <GlassPanel variant="muted" className="p-3.5">
-      <button
-        onClick={() => setExpanded((value) => !value)}
-        className="flex w-full items-center justify-between gap-2"
-        aria-expanded={expanded}
-      >
-        <div className="flex items-center gap-2">
-          <SectionLabel>Sources Analyzed</SectionLabel>
-          <span className="font-mono text-xs text-slate-400">{sources.length} sources</span>
+    <section aria-labelledby="evidence-ledger-title">
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <SectionLabel>Evidence ledger</SectionLabel>
+          <h2 id="evidence-ledger-title" className="mt-2 font-heading text-3xl font-medium tracking-[-0.035em] text-[color:var(--paper)]">
+            Linked sources
+          </h2>
         </div>
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className={`text-slate-400 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
-      <div className="accordion-content" data-open={expanded}>
-        <div className="accordion-inner">
-          <div className="mt-3 space-y-2.5">
-            {sources.map((source, i) => (
-              <SourceCard key={source.id} source={source} index={i} />
-            ))}
-          </div>
-        </div>
+        <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[color:var(--paper-faint)]">{sources.length} total</span>
       </div>
-    </GlassPanel>
+      {sources.length > 0 ? (
+        <div>
+          {sources.map((source, index) => <SourceCard key={source.id} source={source} index={index} />)}
+        </div>
+      ) : (
+        <p className="border-t border-[color:var(--rule)] py-5 text-sm leading-6 text-[color:var(--paper-muted)]">Sources will appear here as the search completes.</p>
+      )}
+    </section>
   );
+}
+
+function cleanSnippet(snippet: string) {
+  return snippet.replace(/\s+/g, " ").replace(/[#*_`]/g, "").trim();
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric" }).format(date);
 }

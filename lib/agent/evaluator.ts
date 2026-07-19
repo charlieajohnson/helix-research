@@ -2,6 +2,7 @@ import type {
   ResearchSource,
   ResearchOutput,
   EvaluationResult,
+  SessionConfig,
 } from "@/lib/types";
 
 // Approximate token costs for gpt-4o-mini
@@ -11,7 +12,8 @@ const OUTPUT_COST_PER_1K = 0.0006;
 export function computeEvaluation(
   sources: ResearchSource[],
   output: ResearchOutput | null,
-  startTime: number
+  startTime: number,
+  config: SessionConfig
 ): EvaluationResult {
   const latencyMs = Date.now() - startTime;
   const warnings: string[] = [];
@@ -19,12 +21,19 @@ export function computeEvaluation(
   // Source count
   const sourceCount = sources.length;
   if (sourceCount === 0) warnings.push("No sources found");
-  if (sourceCount < 3) warnings.push("Low source count — results may be limited");
+  if (sourceCount < 3) warnings.push("Low source count. Results may be limited.");
+  if (config.includeWeb && !sources.some((source) => source.type === "web")) {
+    warnings.push("No web sources were returned.");
+  }
+  if (config.includeArxiv && !sources.some((source) => source.type === "paper")) {
+    warnings.push("No academic sources were returned.");
+  }
 
   // Coverage: diversity of source types and domains
   const types = new Set(sources.map((s) => s.type));
   const domains = new Set(sources.map((s) => s.domain).filter(Boolean));
-  const typeDiversity = types.size / 2; // max 2 types
+  const enabledTypeCount = Number(config.includeWeb) + Number(config.includeArxiv);
+  const typeDiversity = types.size / Math.max(1, enabledTypeCount);
   const domainDiversity = Math.min(domains.size / 5, 1); // normalize to 5 domains
   const coverageScore = sourceCount > 0
     ? (typeDiversity * 0.4 + domainDiversity * 0.4 + Math.min(sourceCount / 8, 1) * 0.2)
@@ -38,7 +47,7 @@ export function computeEvaluation(
     sourceCount > 0 ? citedSourceIds.size / sourceCount : 0;
 
   if (citationCompleteness < 0.5) {
-    warnings.push("Less than half of sources were cited in the synthesis");
+    warnings.push("Less than half of the sources were cited in the synthesis.");
   }
 
   // Cost estimation (rough)
@@ -53,7 +62,7 @@ export function computeEvaluation(
     (totalInputTokens / 1000) * INPUT_COST_PER_1K +
     (totalOutputTokens / 1000) * OUTPUT_COST_PER_1K;
 
-  if (latencyMs > 60000) warnings.push("High latency — pipeline took over 60s");
+  if (latencyMs > 60000) warnings.push("The pipeline took more than 60 seconds.");
 
   return {
     sourceCount,

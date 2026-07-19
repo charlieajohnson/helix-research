@@ -9,7 +9,12 @@ import {
   buildSynthesisUserMessage,
 } from "@/lib/prompts/synthesis";
 
-const client = new OpenAI();
+let client: OpenAI | null = null;
+
+function getClient() {
+  client ??= new OpenAI();
+  return client;
+}
 
 export async function synthesizeStep(
   query: string,
@@ -50,16 +55,19 @@ export async function synthesizeStep(
   while (attempts < maxAttempts) {
     attempts++;
     try {
-      const completion = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        response_format: { type: "json_object" },
-        temperature: 0.4,
-        max_tokens: 2000,
-        messages: [
-          { role: "system", content: SYNTHESIS_SYSTEM_PROMPT },
-          { role: "user", content: userMessage },
-        ],
-      });
+      const completion = await getClient().chat.completions.create(
+        {
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          temperature: 0.4,
+          max_tokens: 2000,
+          messages: [
+            { role: "system", content: SYNTHESIS_SYSTEM_PROMPT },
+            { role: "user", content: userMessage },
+          ],
+        },
+        { signal: AbortSignal.timeout(90_000) }
+      );
 
       const raw = completion.choices[0]?.message?.content;
       if (!raw) throw new Error("Empty response from synthesizer");
@@ -99,7 +107,7 @@ export async function synthesizeStep(
             (s) => `${s.citationLabel} ${s.title}: ${s.snippet.slice(0, 100)}...`
           ),
           openQuestions: ["Full synthesis could not be completed"],
-          limitations: ["Synthesis step failed — raw sources are available"],
+          limitations: ["The synthesis step failed. Raw sources are available."],
           citations: sources.map((s) => ({
             label: s.citationLabel ?? "[S?]",
             sourceId: s.id,

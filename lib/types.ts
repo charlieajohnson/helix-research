@@ -2,11 +2,16 @@ import { z } from "zod";
 
 // ── Session Config ─────────────────────────────────────────────────────────────
 
-export const SessionConfigSchema = z.object({
-  depth: z.enum(["quick", "standard", "deep"]).default("standard"),
-  includeWeb: z.boolean().default(true),
-  includeArxiv: z.boolean().default(true),
-});
+export const SessionConfigSchema = z
+  .object({
+    depth: z.enum(["quick", "standard", "deep"]).default("standard"),
+    includeWeb: z.boolean().default(true),
+    includeArxiv: z.boolean().default(true),
+  })
+  .refine((config) => config.includeWeb || config.includeArxiv, {
+    message: "Enable at least one source set",
+    path: ["includeWeb"],
+  });
 
 export type SessionConfig = z.infer<typeof SessionConfigSchema>;
 
@@ -107,7 +112,11 @@ export type SessionResponse = {
 // ── API Request Schemas ────────────────────────────────────────────────────────
 
 export const CreateResearchRequestSchema = z.object({
-  query: z.string().min(5, "Query must be at least 5 characters"),
+  query: z
+    .string()
+    .trim()
+    .min(5, "Use at least five characters")
+    .max(600, "Keep the research question under 600 characters"),
   config: SessionConfigSchema.optional(),
 });
 

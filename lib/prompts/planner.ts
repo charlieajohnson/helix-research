@@ -16,6 +16,8 @@ Guidelines:
 - Web queries should use natural search engine phrasing
 - Paper queries should use academic terminology and keywords
 - Success criteria should be concrete and measurable
+- Preserve any decision context, timeframe, exclusions, geography, company or technical boundary in the query
 - Keep everything concise and actionable
+- Do not use em dashes
 
 Respond ONLY with the JSON object, no other text.`;

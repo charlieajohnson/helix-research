@@ -28,14 +28,17 @@ export async function searchWeb(queries: string[]): Promise<ResearchSource[]> {
     try {
       const response = await fetch("https://api.tavily.com/search", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
         body: JSON.stringify({
-          api_key: apiKey,
           query,
           max_results: 5,
           include_answer: false,
           search_depth: "basic",
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!response.ok) {
@@ -45,7 +48,7 @@ export async function searchWeb(queries: string[]): Promise<ResearchSource[]> {
 
       const data: TavilyResponse = await response.json();
 
-      for (const result of data.results) {
+      for (const result of data.results ?? []) {
         if (seenUrls.has(result.url)) continue;
         seenUrls.add(result.url);
 
@@ -56,7 +59,7 @@ export async function searchWeb(queries: string[]): Promise<ResearchSource[]> {
           type: "web",
           title: result.title,
           url: result.url,
-          snippet: result.content?.slice(0, 500) ?? "",
+          snippet: cleanSnippet(result.content).slice(0, 500),
           domain,
           publishedAt: result.published_date,
           score: result.score ?? 0,
@@ -76,4 +79,13 @@ function extractDomain(url: string): string {
   } catch {
     return "unknown";
   }
+}
+
+function cleanSnippet(value: string | undefined): string {
+  return (value ?? "")
+    .replace(/By clicking [^.]+Privacy Policy\./gi, "")
+    .replace(/By using our site[^.]+Privacy Policy\./gi, "")
+    .replace(/We use cookies[^.]+\./gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }

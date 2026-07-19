@@ -12,6 +12,7 @@ export async function searchArxiv(queries: string[]): Promise<ResearchSource[]> 
 
       const response = await fetch(url, {
         headers: { "User-Agent": "Helix/1.0 (research-agent)" },
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!response.ok) {

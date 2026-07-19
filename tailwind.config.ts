@@ -30,9 +30,9 @@ module.exports = {
         },
       },
       fontFamily: {
-        heading: ["Sora", "sans-serif"],
-        body: ["DM Sans", "sans-serif"],
-        mono: ["IBM Plex Mono", "monospace"],
+        heading: ["var(--font-display)", "Georgia", "serif"],
+        body: ["var(--font-sans)", "Arial", "sans-serif"],
+        mono: ["SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
       borderRadius: {
         panel: "12px",

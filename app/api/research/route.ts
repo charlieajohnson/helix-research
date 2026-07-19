@@ -1,66 +1,67 @@
-import { NextRequest, NextResponse } from "next/server";
-import { after } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { CreateResearchRequestSchema, SessionConfigSchema } from "@/lib/types";
-import {
-  createResearchSession,
-  executeResearchPipeline,
-} from "@/lib/agent/orchestrator";
-import { getRecentSessions } from "@/lib/db/queries";
+import { createResearchSession, executeResearchPipeline } from "@/lib/agent/orchestrator";
+import { checkResearchRateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 300;
+export const dynamic = "force-dynamic";
+
+const PRIVATE_HEADERS = {
+  "Cache-Control": "private, no-store, max-age=0",
+  "X-Content-Type-Options": "nosniff",
+};
 
 export async function POST(request: NextRequest) {
+  const clientKey =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "local";
+  const rateLimit = checkResearchRateLimit(clientKey);
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Research limit reached. Try again shortly." },
+      {
+        status: 429,
+        headers: { ...PRIVATE_HEADERS, "Retry-After": String(rateLimit.retryAfterSeconds) },
+      }
+    );
+  }
+
   try {
     const body = await request.json();
     const parsed = CreateResearchRequestSchema.parse(body);
     const config = SessionConfigSchema.parse(parsed.config ?? {});
-
-    // Phase 1: Create session in DB (fast — just an INSERT)
     const sessionId = await createResearchSession(parsed.query, config);
 
-    // Phase 2: Run pipeline in the background after response is sent
     after(async () => {
       try {
         await executeResearchPipeline(sessionId, parsed.query, config);
-      } catch (err) {
-        console.error(`Background pipeline failed for ${sessionId}:`, err);
+      } catch (error) {
+        console.error(`Background pipeline failed for ${sessionId}:`, error);
       }
     });
 
-    // Return immediately — frontend navigates to /research/[id] and polls
     return NextResponse.json(
       { id: sessionId, status: "intake" },
-      { status: 201 }
+      { status: 201, headers: PRIVATE_HEADERS }
     );
-  } catch (err: any) {
-    console.error("POST /api/research error:", err);
-
-    if (err?.name === "ZodError") {
+  } catch (error: unknown) {
+    if (isZodError(error)) {
       return NextResponse.json(
-        { error: "Invalid request", details: err.issues },
-        { status: 400 }
+        { error: error.issues[0]?.message ?? "Invalid request", details: error.issues },
+        { status: 400, headers: PRIVATE_HEADERS }
       );
     }
 
+    console.error("POST /api/research error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: "The research session could not be created." },
+      { status: 500, headers: PRIVATE_HEADERS }
     );
   }
 }
 
-/**
- * GET /api/research — list recent sessions for the sidebar
- */
-export async function GET() {
-  try {
-    const sessions = await getRecentSessions(20);
-    return NextResponse.json({ sessions });
-  } catch (err) {
-    console.error("GET /api/research error:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+function isZodError(error: unknown): error is { issues: Array<{ message?: string }> } {
+  return typeof error === "object" && error !== null && "issues" in error && Array.isArray((error as { issues?: unknown }).issues);
 }

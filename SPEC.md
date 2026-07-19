@@ -1,5 +1,7 @@
 # Helix — MVP Spec
 
+> Historical implementation brief. The current product positioning, visual system and public-surface safeguards are documented in `README.md` and the application source.
+
 > **Purpose**: Portfolio project — AI research agent with visible orchestration.
 > **Model**: GPT-5 mini via OpenAI API (Chat Completions + structured outputs).
 > **Stack**: Next.js (app router), TypeScript, Tailwind, Zustand, Postgres (Neon), Vercel.

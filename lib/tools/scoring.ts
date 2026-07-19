@@ -17,6 +17,7 @@ const DOMAIN_SCORES: Record<string, number> = {
 
 export function dedupeAndRank(
   sources: ResearchSource[],
+  query: string,
   maxResults: number = 10
 ): ResearchSource[] {
   // 1. Deduplicate by URL
@@ -51,7 +52,7 @@ export function dedupeAndRank(
   // 3. Score each source
   const scored = deduped.map((source) => ({
     ...source,
-    score: computeScore(source),
+    score: computeScore(source, query),
   }));
 
   // 4. Sort by score descending
@@ -64,11 +65,15 @@ export function dedupeAndRank(
   }));
 }
 
-function computeScore(source: ResearchSource): number {
+function computeScore(source: ResearchSource, query: string): number {
   let score = 0;
 
   // Base score from search relevance
-  score += (source.score || 0.5) * 0.4;
+  const providerRelevance =
+    source.type === "web" && Number.isFinite(source.score)
+      ? clamp(source.score)
+      : keywordOverlap(query, `${source.title} ${source.snippet}`);
+  score += providerRelevance * 0.4;
 
   // Domain credibility
   const domainScore = getDomainScore(source.domain ?? "");
@@ -105,7 +110,7 @@ function getDomainScore(domain: string): number {
 
   // Check if domain ends with a known high-reputation suffix
   for (const [key, value] of Object.entries(DOMAIN_SCORES)) {
-    if (domain.endsWith(key)) return value;
+    if (domain.endsWith(`.${key}`)) return value;
   }
 
   return 0.4; // default
@@ -135,11 +140,29 @@ function similarityScore(a: string, b: string): number {
 }
 
 function daysSince(dateStr: string): number {
-  try {
-    const date = new Date(dateStr);
-    const now = new Date();
-    return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  } catch {
-    return 365; // default to old
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return 365;
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+function keywordOverlap(query: string, document: string): number {
+  const queryTerms = new Set(tokenize(query));
+  const documentTerms = new Set(tokenize(document));
+  if (queryTerms.size === 0) return 0;
+  let matches = 0;
+  for (const term of queryTerms) {
+    if (documentTerms.has(term)) matches += 1;
   }
+  return matches / queryTerms.size;
+}
+
+function tokenize(value: string) {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((term) => term.length > 2);
+}
+
+function clamp(value: number) {
+  return Math.min(1, Math.max(0, value));
 }

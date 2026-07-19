@@ -1,27 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getFullSession } from "@/lib/db/queries";
 
+export const dynamic = "force-dynamic";
+
+const PRIVATE_HEADERS = {
+  "Cache-Control": "private, no-store, max-age=0",
+  "X-Content-Type-Options": "nosniff",
+};
+
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const session = await getFullSession(id);
-
-    if (!session) {
+    if (!z.string().uuid().safeParse(id).success) {
       return NextResponse.json(
-        { error: "Session not found" },
-        { status: 404 }
+        { error: "Invalid research record." },
+        { status: 400, headers: PRIVATE_HEADERS }
       );
     }
 
-    return NextResponse.json(session);
-  } catch (err) {
-    console.error("GET /api/research/[id] error:", err);
+    const session = await getFullSession(id);
+    if (!session) {
+      return NextResponse.json(
+        { error: "Research record not found." },
+        { status: 404, headers: PRIVATE_HEADERS }
+      );
+    }
+
+    return NextResponse.json(session, { headers: PRIVATE_HEADERS });
+  } catch (error) {
+    console.error("GET /api/research/[id] error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: "The research record could not be loaded." },
+      { status: 500, headers: PRIVATE_HEADERS }
     );
   }
 }

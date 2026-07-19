@@ -1,144 +1,114 @@
-"use client";
+import type { ReactNode } from "react";
+import { SectionLabel } from "@/components/ui";
+import type { ResearchOutput, ResearchSource } from "@/lib/types";
 
-import { useState, type ReactNode } from "react";
-import { GlassPanel, SectionLabel } from "@/components/ui";
-import type { ResearchOutput } from "@/lib/types";
-
-export function SynthesisPanel({ output }: { output: ResearchOutput }) {
-  const [openQuestionsOpen, setOpenQuestionsOpen] = useState(false);
-  const [limitationsOpen, setLimitationsOpen] = useState(false);
+export function SynthesisPanel({
+  output,
+  sources,
+}: {
+  output: ResearchOutput;
+  sources: ResearchSource[];
+}) {
+  const sourceByLabel = new Map(
+    sources.filter((source) => source.citationLabel).map((source) => [source.citationLabel!, source])
+  );
 
   return (
-    <div
-      style={{
-        animation: "fadeUp 0.5s ease-out both",
-        animationDelay: "0.1s",
-      }}
-      className="space-y-5"
-    >
-      <GlassPanel variant="elevated" className="p-5 sm:p-6">
-        <h3 className="mb-3 font-heading text-xl font-semibold leading-snug text-white">
-          Research Findings
-        </h3>
-        <div className="whitespace-pre-wrap text-sm leading-7 text-slate-200">
-          {highlightCitations(output.summary)}
+    <div className="space-y-12" style={{ animation: "fadeUp 0.45s ease-out both" }}>
+      <section aria-labelledby="executive-read-title">
+        <SectionLabel>Executive read</SectionLabel>
+        <h2 id="executive-read-title" className="mt-3 font-heading text-4xl font-medium tracking-[-0.04em] text-[color:var(--paper)] sm:text-5xl">
+          What the evidence says.
+        </h2>
+        <div className="mt-7 space-y-5 text-[15px] leading-8 text-[color:var(--paper-muted)]">
+          {splitParagraphs(output.summary).map((paragraph, index) => (
+            <p key={index}>{renderInline(paragraph, sourceByLabel)}</p>
+          ))}
         </div>
-      </GlassPanel>
+      </section>
 
       {output.keyFindings.length > 0 && (
-        <div>
-          <SectionLabel>Key Findings</SectionLabel>
-          <div className="mt-2.5 space-y-2.5">
-            {output.keyFindings.map((finding, i) => (
-              <GlassPanel key={i} variant="default" className="p-3.5 sm:p-4">
-                <div className="flex gap-3">
-                  <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-teal-300/30 bg-teal-300/10 px-1.5 font-mono text-[10px] font-semibold text-teal-100">
-                    {i + 1}
-                  </span>
-                  <p className="text-sm leading-7 text-slate-200">
-                    {highlightCitations(finding)}
-                  </p>
-                </div>
-              </GlassPanel>
-            ))}
+        <section aria-labelledby="findings-title">
+          <div className="flex items-end justify-between gap-4 border-b border-[color:var(--rule-strong)] pb-4">
+            <div>
+              <SectionLabel>Findings</SectionLabel>
+              <h2 id="findings-title" className="mt-2 font-heading text-3xl font-medium tracking-[-0.035em] text-[color:var(--paper)]">The decision record.</h2>
+            </div>
+            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--paper-faint)]">{output.keyFindings.length} claims</span>
           </div>
-        </div>
+          <ol>
+            {output.keyFindings.map((finding, index) => (
+              <li key={index} className="grid grid-cols-[2.25rem_1fr] gap-4 border-b border-[color:var(--rule)] py-6">
+                <span className="font-mono text-[9px] text-[color:var(--signal)]">0{index + 1}</span>
+                <p className="text-sm leading-7 text-[color:var(--paper-muted)]">{renderInline(finding, sourceByLabel)}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
 
-      {output.openQuestions.length > 0 && (
-        <CollapsibleList
-          title="Open Questions"
-          open={openQuestionsOpen}
-          onToggle={() => setOpenQuestionsOpen((value) => !value)}
+      <div className="grid gap-10 md:grid-cols-2">
+        <ResearchList
+          eyebrow="Open questions"
+          title="What remains unresolved."
           items={output.openQuestions}
-          marker="?"
-          itemTone="text-slate-300"
-          markerTone="text-amber-300"
         />
-      )}
-
-      {output.limitations.length > 0 && (
-        <CollapsibleList
-          title="Limitations"
-          open={limitationsOpen}
-          onToggle={() => setLimitationsOpen((value) => !value)}
+        <ResearchList
+          eyebrow="Limits"
+          title="Where the brief stops."
           items={output.limitations}
-          marker="-"
-          itemTone="text-slate-400"
-          markerTone="text-slate-500"
         />
-      )}
+      </div>
     </div>
   );
 }
 
-function CollapsibleList({
-  title,
-  open,
-  onToggle,
-  items,
-  marker,
-  itemTone,
-  markerTone,
-}: {
-  title: string;
-  open: boolean;
-  onToggle: () => void;
-  items: string[];
-  marker: string;
-  itemTone: string;
-  markerTone: string;
-}) {
+function ResearchList({ eyebrow, title, items }: { eyebrow: string; title: string; items: string[] }) {
+  if (items.length === 0) return null;
   return (
-    <GlassPanel variant="muted" className="p-3.5">
-      <button
-        onClick={onToggle}
-        className="flex w-full items-center justify-between gap-3 text-left"
-        aria-expanded={open}
-      >
-        <SectionLabel>{title}</SectionLabel>
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className={`text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
-      <div className="accordion-content" data-open={open}>
-        <div className="accordion-inner">
-          <div className="mt-2.5 space-y-2">
-            {items.map((item, i) => (
-              <div key={i} className={`flex gap-2 text-sm leading-6 ${itemTone}`}>
-                <span className={`mt-0.5 font-mono text-xs ${markerTone}`}>{marker}</span>
-                <span>{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </GlassPanel>
+    <section>
+      <SectionLabel>{eyebrow}</SectionLabel>
+      <h2 className="mt-2 font-heading text-3xl font-medium tracking-[-0.035em] text-[color:var(--paper)]">{title}</h2>
+      <ul className="mt-5 border-t border-[color:var(--rule-strong)]">
+        {items.map((item, index) => (
+          <li key={index} className="grid grid-cols-[1.5rem_1fr] gap-3 border-b border-[color:var(--rule)] py-4 text-sm leading-6 text-[color:var(--paper-muted)]">
+            <span className="font-mono text-[9px] text-[color:var(--signal)]">{String(index + 1).padStart(2, "0")}</span>
+            <span>{cleanMarkdown(item)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
-function highlightCitations(text: string): ReactNode {
-  const parts = text.split(/(\[S\d+\])/g);
-  return parts.map((part, i) => {
-    if (/\[S\d+\]/.test(part)) {
+function splitParagraphs(text: string) {
+  return text.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
+}
+
+function renderInline(text: string, sources: Map<string, ResearchSource>): ReactNode {
+  const parts = text.split(/(\[S\d+\]|\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    if (/^\[S\d+\]$/.test(part)) {
+      const source = sources.get(part);
+      if (!source) return part;
       return (
-        <span
-          key={i}
-          className="mx-0.5 inline-flex items-center rounded-md border border-teal-300/35 bg-teal-300/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-teal-100"
+        <a
+          key={`${part}-${index}`}
+          href={`#source-${source.id}`}
+          className="mx-1 inline-flex min-h-6 items-center border border-[color:var(--signal)] px-1.5 font-mono text-[9px] font-semibold text-[color:var(--signal)] transition-colors hover:bg-[color:var(--signal)] hover:text-[color:var(--ink)]"
+          aria-label={`${part}: jump to ${source.title}`}
         >
           {part}
-        </span>
+        </a>
       );
     }
-    return part;
+    if (/^\*\*[^*]+\*\*$/.test(part)) {
+      return <strong key={index} className="font-semibold text-[color:var(--paper)]">{part.slice(2, -2)}</strong>;
+    }
+    return cleanMarkdown(part);
   });
+}
+
+function cleanMarkdown(value: string) {
+  return value.replace(/^#{1,6}\s+/g, "").replace(/`/g, "");
 }
