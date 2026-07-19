@@ -11,8 +11,9 @@ const DOMAIN_SCORES: Record<string, number> = {
   "gov": 0.85,
   "edu": 0.85,
   "wikipedia.org": 0.6,
-  "medium.com": 0.3,
-  "reddit.com": 0.2,
+  "medium.com": 0.2,
+  "youtube.com": 0.15,
+  "reddit.com": 0.1,
 };
 
 export function dedupeAndRank(
