@@ -3,20 +3,20 @@ import type { ResearchSource } from "@/lib/types";
 
 export function SourceCard({ source, index }: { source: ResearchSource; index: number }) {
   return (
-    <article id={`source-${source.id}`} className="scroll-mt-6 border-t border-[color:var(--rule)] py-5 first:border-t-0 first:pt-0">
-      <div className="flex items-center justify-between gap-3">
+    <article id={`source-${source.id}`} className="scroll-mt-6 border-t border-[color:var(--rule)] py-5 [overflow-wrap:anywhere] first:border-t-0 first:pt-0">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-[color:var(--signal)]">
           {source.citationLabel ?? `[S${index + 1}]`}
         </span>
         <Badge variant={source.type === "paper" ? "paper" : "web"}>{source.type}</Badge>
       </div>
       <h3 className="mt-3 text-sm font-semibold leading-6 text-[color:var(--paper)]">{source.title}</h3>
-      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[8px] uppercase tracking-[0.08em] text-[color:var(--paper-faint)]">
+      <div className="mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 font-mono text-[8px] uppercase tracking-[0.08em] text-[color:var(--paper-faint)] [overflow-wrap:anywhere]">
         {source.domain && <span>{source.domain}</span>}
         {source.publishedAt && <span>{formatDate(source.publishedAt)}</span>}
         {source.authors && source.authors.length > 0 && <span>{source.authors.slice(0, 2).join(", ")}</span>}
       </div>
-      <p className="mt-3 line-clamp-4 text-xs leading-6 text-[color:var(--paper-muted)]">{cleanSnippet(source.snippet)}</p>
+      <p className="mt-3 line-clamp-4 text-xs leading-5 text-[color:var(--paper-muted)]">{cleanSnippet(source.snippet)}</p>
       <a
         href={source.url}
         target="_blank"
@@ -33,10 +33,10 @@ export function SourceCard({ source, index }: { source: ResearchSource; index: n
 export function SourceList({ sources }: { sources: ResearchSource[] }) {
   return (
     <section aria-labelledby="evidence-ledger-title">
-      <div className="mb-5 flex items-end justify-between gap-4">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <SectionLabel>Evidence ledger</SectionLabel>
-          <h2 id="evidence-ledger-title" className="mt-2 font-heading text-3xl font-medium tracking-[-0.035em] text-[color:var(--paper)]">
+          <h2 id="evidence-ledger-title" className="mt-2 font-heading text-2xl font-medium leading-[1.05] tracking-[-0.03em] text-[color:var(--paper)] sm:text-[1.75rem]">
             Linked sources
           </h2>
         </div>

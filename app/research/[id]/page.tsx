@@ -46,7 +46,7 @@ function UnavailableBrief({ message }: { message: string }) {
     <main className="flex min-h-[100dvh] items-center justify-center px-5 py-12">
       <section className="w-full max-w-xl border-y border-[color:var(--rule)] py-10 text-center" role="alert">
         <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[color:var(--signal)]">Research record unavailable</p>
-        <h1 className="mt-4 font-heading text-5xl font-medium tracking-[-0.04em] text-[color:var(--paper)]">This brief could not be opened.</h1>
+        <h1 className="mt-4 font-heading text-[clamp(2rem,5vw,2.5rem)] font-medium leading-[1.05] tracking-[-0.035em] text-[color:var(--paper)]">This brief could not be opened.</h1>
         <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-[color:var(--paper-muted)]">{message}</p>
         <a href="/" className="mt-7 inline-flex min-h-11 items-center border border-[color:var(--rule)] px-5 py-3 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--paper)] transition-colors hover:border-[color:var(--signal)]">
           Start a new brief

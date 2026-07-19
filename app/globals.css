@@ -37,12 +37,19 @@
   body {
     min-height: 100vh;
     min-height: 100dvh;
-    overflow-x: hidden;
     background: var(--ink);
     color: var(--paper);
     font-family: var(--font-sans), Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  li {
+    overflow-wrap: break-word;
   }
 
   body::before {

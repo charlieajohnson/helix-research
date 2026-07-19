@@ -87,7 +87,7 @@ export function QueryComposer() {
           helix.
         </a>
         <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.18em] text-[color:var(--paper-faint)] sm:text-[10px]">
-          <span>Research desk</span>
+          <span className="hidden sm:inline">Research desk</span>
           <span className="h-1.5 w-1.5 bg-[color:var(--signal)]" aria-hidden="true" />
           <span>Public beta</span>
         </div>
@@ -98,15 +98,15 @@ export function QueryComposer() {
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[color:var(--signal)]">
             Helix / Research desk
           </p>
-          <h1 className="mt-6 max-w-[12ch] font-heading text-[clamp(4rem,8vw,8.6rem)] font-medium leading-[0.84] tracking-[-0.055em] text-[color:var(--paper)]">
+          <h1 className="mt-6 max-w-[12ch] font-heading text-[clamp(3rem,5vw,5rem)] font-medium leading-[0.9] tracking-[-0.045em] text-[color:var(--paper)]">
             Research you can inspect.
           </h1>
-          <p className="mt-8 max-w-xl text-base leading-7 text-[color:var(--paper-muted)] sm:text-lg sm:leading-8">
+          <p className="mt-7 max-w-xl text-[15px] leading-7 text-[color:var(--paper-muted)] sm:text-base">
             Turn a difficult question into an evidence-backed brief. Keep the search path, source set, uncertainty and next questions intact.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-10 max-w-2xl" noValidate>
-            <label htmlFor="research-query" className="mb-3 block font-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--paper-muted)]">
+            <label htmlFor="research-query" className="mb-3 block font-mono text-[9px] uppercase leading-4 tracking-[0.12em] text-[color:var(--paper-muted)]">
               What decision or question are you preparing for?
             </label>
             <div className="border border-[color:var(--rule-strong)] bg-[color:var(--paper)] p-2 focus-within:border-[color:var(--signal)]">
@@ -116,12 +116,12 @@ export function QueryComposer() {
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Frame the question, decision and evidence threshold."
-                rows={4}
+                rows={3}
                 minLength={5}
                 maxLength={600}
                 disabled={isSubmitting}
                 aria-describedby={error ? "query-error" : "query-guidance"}
-                className="min-h-28 w-full resize-none bg-transparent px-3 py-3 text-base leading-7 text-[color:var(--ink)] outline-none placeholder:text-[#716b62] disabled:opacity-60"
+                className="min-h-24 w-full resize-none bg-transparent px-3 py-3 text-[15px] leading-7 text-[color:var(--ink)] outline-none placeholder:text-[#716b62] disabled:opacity-60 sm:text-base"
               />
               <div className="flex flex-col gap-3 border-t border-black/15 px-3 pb-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
                 <p id="query-guidance" className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#665f56]">
@@ -220,12 +220,12 @@ export function QueryComposer() {
             sizes="(max-width: 1023px) 100vw, 46vw"
             className="object-cover"
           />
-          <figcaption className="absolute inset-x-0 bottom-0 z-10 grid gap-5 border-t border-white/25 bg-black/78 p-5 backdrop-blur-sm sm:grid-cols-[auto_1fr] sm:p-7">
+          <figcaption className="absolute inset-x-0 bottom-0 z-10 grid gap-5 border-t border-white/25 bg-black/78 p-5 backdrop-blur-sm sm:grid-cols-[auto_1fr] sm:p-7 lg:grid-cols-1 xl:grid-cols-[auto_1fr]">
             <div>
               <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#ff6a33]">Plate 01</p>
-              <p className="mt-2 font-heading text-3xl font-medium tracking-[-0.03em] text-[#f1eee6]">Evidence resolution</p>
+              <p className="mt-2 font-heading text-2xl font-medium tracking-[-0.03em] text-[#f1eee6]">Evidence resolution</p>
             </div>
-            <div className="grid grid-cols-3 gap-3 border-t border-white/20 pt-4 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+            <div className="grid grid-cols-3 gap-3 border-t border-white/20 pt-4 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0 lg:border-l-0 lg:border-t lg:pl-0 lg:pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
               {["What the evidence says", "Where it disagrees", "What to verify next"].map((line, index) => (
                 <div key={line}>
                   <span className="font-mono text-[8px] text-[#ff6a33]">0{index + 1}</span>

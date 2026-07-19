@@ -27,10 +27,10 @@ export function ObservabilityPanel({
 
   return (
     <div>
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <SectionLabel>Run details</SectionLabel>
-          <h2 className="mt-2 font-heading text-3xl font-medium tracking-[-0.035em] text-[color:var(--paper)]">Research log</h2>
+          <h2 className="mt-2 font-heading text-2xl font-medium leading-[1.05] tracking-[-0.03em] text-[color:var(--paper)] sm:text-[1.75rem]">Research log</h2>
         </div>
         <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[color:var(--paper-faint)]">{status}</span>
       </div>

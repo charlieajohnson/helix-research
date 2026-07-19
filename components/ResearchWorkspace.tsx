@@ -62,7 +62,7 @@ export function ResearchWorkspace({ sessionId }: { sessionId: string }) {
             {session.status === "failed" && (
               <section className="mt-8 border-l-2 border-[color:var(--danger)] pl-5" role="alert">
                 <SectionLabel>Run interrupted</SectionLabel>
-                <h2 className="mt-2 font-heading text-3xl font-medium text-[color:var(--paper)]">The brief could not be completed.</h2>
+                <h2 className="mt-2 font-heading text-2xl font-medium text-[color:var(--paper)] sm:text-[1.75rem]">The brief could not be completed.</h2>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-[color:var(--paper-muted)]">No completed result was published. Start a new brief or narrow the question and try again.</p>
                 <GlassButton onClick={handleNewResearch} className="mt-5">Start again</GlassButton>
               </section>
@@ -96,7 +96,7 @@ function ScopeRail({ session, plan }: { session: ResearchSession; plan: Research
   return (
     <div>
       <SectionLabel>Brief scope</SectionLabel>
-      <p className="mt-4 text-sm leading-6 text-[color:var(--paper)]">{session.query}</p>
+      <p className="mt-4 text-sm leading-6 text-[color:var(--paper)] [overflow-wrap:anywhere]">{session.query}</p>
       <div className="mt-5 flex flex-wrap gap-2 font-mono text-[8px] uppercase tracking-[0.12em] text-[color:var(--paper-faint)]">
         <span className="border border-[color:var(--rule)] px-2 py-1.5">{session.config.depth}</span>
         {session.config.includeWeb && <span className="border border-[color:var(--rule)] px-2 py-1.5">Web</span>}
@@ -115,10 +115,10 @@ function PlanSummary({ plan, compact = false }: { plan: ResearchPlan; compact?: 
   return (
     <section>
       <SectionLabel>Research plan</SectionLabel>
-      {!compact && <p className="mt-3 text-sm leading-6 text-[color:var(--paper-muted)]">{plan.objective}</p>}
+      {!compact && <p className="mt-3 text-sm leading-6 text-[color:var(--paper-muted)] [overflow-wrap:anywhere]">{plan.objective}</p>}
       <ol className="mt-4 border-t border-[color:var(--rule)]">
         {plan.subquestions.map((question, index) => (
-          <li key={question} className="grid grid-cols-[1.5rem_1fr] gap-2 border-b border-[color:var(--rule)] py-3 text-xs leading-5 text-[color:var(--paper-muted)]">
+          <li key={question} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 border-b border-[color:var(--rule)] py-3 text-xs leading-5 text-[color:var(--paper-muted)] [overflow-wrap:anywhere]">
             <span className="font-mono text-[8px] text-[color:var(--signal)]">0{index + 1}</span>
             <span>{question}</span>
           </li>
@@ -139,12 +139,12 @@ function StageHeader({ status, query, sourceCount }: { status: SessionStatus; qu
     complete: "Brief complete",
     failed: "Run interrupted",
   };
-  const titleSize =
+  const titleStyle =
     query.length > 180
-      ? "text-[clamp(2rem,3vw,3rem)]"
+      ? "text-[clamp(1.75rem,2vw,2.25rem)] leading-[1.05]"
       : query.length > 100
-        ? "text-[clamp(2.35rem,3.5vw,3.5rem)]"
-        : "text-[clamp(2.6rem,3.8vw,4rem)]";
+        ? "text-[clamp(1.875rem,2.4vw,2.625rem)] leading-[1.02]"
+        : "text-[clamp(2rem,2.8vw,3rem)] leading-[1.02]";
 
   return (
     <header className="border-b border-[color:var(--rule-strong)] pb-8">
@@ -152,7 +152,7 @@ function StageHeader({ status, query, sourceCount }: { status: SessionStatus; qu
         <span className={status === "failed" ? "text-[color:var(--danger)]" : "text-[color:var(--signal)]"}>{labels[status]}</span>
         <span className="text-[color:var(--paper-faint)]">{sourceCount > 0 ? `${sourceCount} sources` : "Source set pending"}</span>
       </div>
-      <h1 className={`mt-5 max-w-4xl font-heading font-medium leading-[0.96] tracking-[-0.04em] text-[color:var(--paper)] ${titleSize}`}>{query}</h1>
+      <h1 className={`mt-5 max-w-4xl font-heading font-medium tracking-[-0.035em] text-[color:var(--paper)] [overflow-wrap:anywhere] [text-wrap:pretty] ${titleStyle}`}>{query}</h1>
     </header>
   );
 }

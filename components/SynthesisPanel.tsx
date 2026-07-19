@@ -17,10 +17,10 @@ export function SynthesisPanel({
     <div className="space-y-12" style={{ animation: "fadeUp 0.45s ease-out both" }}>
       <section aria-labelledby="executive-read-title">
         <SectionLabel>Executive read</SectionLabel>
-        <h2 id="executive-read-title" className="mt-3 font-heading text-4xl font-medium tracking-[-0.04em] text-[color:var(--paper)] sm:text-5xl">
+        <h2 id="executive-read-title" className="mt-3 font-heading text-[clamp(1.875rem,2.4vw,2.5rem)] font-medium leading-[1.02] tracking-[-0.035em] text-[color:var(--paper)]">
           What the evidence says.
         </h2>
-        <div className="mt-7 space-y-5 text-[15px] leading-8 text-[color:var(--paper-muted)]">
+        <div className="mt-6 max-w-[68ch] space-y-5 text-[15px] leading-[1.75] text-[color:var(--paper-muted)] [overflow-wrap:anywhere]">
           {splitParagraphs(output.summary).map((paragraph, index) => (
             <p key={index}>{renderInline(paragraph, sourceByLabel)}</p>
           ))}
@@ -29,18 +29,18 @@ export function SynthesisPanel({
 
       {output.keyFindings.length > 0 && (
         <section aria-labelledby="findings-title">
-          <div className="flex items-end justify-between gap-4 border-b border-[color:var(--rule-strong)] pb-4">
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--rule-strong)] pb-4">
             <div>
               <SectionLabel>Findings</SectionLabel>
-              <h2 id="findings-title" className="mt-2 font-heading text-3xl font-medium tracking-[-0.035em] text-[color:var(--paper)]">The decision record.</h2>
+              <h2 id="findings-title" className="mt-2 font-heading text-2xl font-medium leading-[1.05] tracking-[-0.03em] text-[color:var(--paper)] sm:text-[1.75rem]">The decision record.</h2>
             </div>
             <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--paper-faint)]">{output.keyFindings.length} claims</span>
           </div>
           <ol>
             {output.keyFindings.map((finding, index) => (
-              <li key={index} className="grid grid-cols-[2.25rem_1fr] gap-4 border-b border-[color:var(--rule)] py-6">
+              <li key={index} className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-4 border-b border-[color:var(--rule)] py-6 [overflow-wrap:anywhere]">
                 <span className="font-mono text-[9px] text-[color:var(--signal)]">0{index + 1}</span>
-                <p className="text-sm leading-7 text-[color:var(--paper-muted)]">{renderInline(finding, sourceByLabel)}</p>
+                <p className="text-sm leading-6 text-[color:var(--paper-muted)]">{renderInline(finding, sourceByLabel)}</p>
               </li>
             ))}
           </ol>
@@ -68,10 +68,10 @@ function ResearchList({ eyebrow, title, items }: { eyebrow: string; title: strin
   return (
     <section>
       <SectionLabel>{eyebrow}</SectionLabel>
-      <h2 className="mt-2 font-heading text-3xl font-medium tracking-[-0.035em] text-[color:var(--paper)]">{title}</h2>
+      <h2 className="mt-2 font-heading text-2xl font-medium leading-[1.05] tracking-[-0.03em] text-[color:var(--paper)] sm:text-[1.75rem]">{title}</h2>
       <ul className="mt-5 border-t border-[color:var(--rule-strong)]">
         {items.map((item, index) => (
-          <li key={index} className="grid grid-cols-[1.5rem_1fr] gap-3 border-b border-[color:var(--rule)] py-4 text-sm leading-6 text-[color:var(--paper-muted)]">
+          <li key={index} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-3 border-b border-[color:var(--rule)] py-4 text-sm leading-6 text-[color:var(--paper-muted)] [overflow-wrap:anywhere]">
             <span className="font-mono text-[9px] text-[color:var(--signal)]">{String(index + 1).padStart(2, "0")}</span>
             <span>{cleanMarkdown(item)}</span>
           </li>
