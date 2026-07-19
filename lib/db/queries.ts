@@ -91,10 +91,19 @@ export async function saveSources(sessionId: string, sources: ResearchSource[]) 
 }
 
 export async function getSources(sessionId: string) {
-  return db()
+  const sources = await db()
     .select()
     .from(researchSources)
     .where(eq(researchSources.sessionId, sessionId));
+
+  return sources.sort(
+    (left, right) => citationNumber(left.citationLabel) - citationNumber(right.citationLabel)
+  );
+}
+
+function citationNumber(label: string | null) {
+  const match = label?.match(/^\[S(\d+)\]$/);
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
 }
 
 // ── Outputs ────────────────────────────────────────────────────────────────────
